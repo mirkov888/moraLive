@@ -292,8 +292,8 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { selected = "Streamer" },
-                            actionLabel = "Lihat streamer"
+                            onOpen = { selected = platform.name },
+                            actionLabel = "Buka platform"
                         )
                     }
                     item {
