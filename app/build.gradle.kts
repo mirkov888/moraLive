@@ -10,8 +10,32 @@ android {
         applicationId = "id.mora.live"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.1"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = System.getenv("MORA_KEYSTORE_FILE")
+            val storePass = System.getenv("MORA_KEYSTORE_PASSWORD")
+            val keyAliasValue = System.getenv("MORA_KEY_ALIAS")
+            val keyPass = System.getenv("MORA_KEY_PASSWORD")
+            if (!storePath.isNullOrBlank() && !storePass.isNullOrBlank() &&
+                !keyAliasValue.isNullOrBlank() && !keyPass.isNullOrBlank()
+            ) {
+                storeFile = file(storePath)
+                storePassword = storePass
+                keyAlias = keyAliasValue
+                keyPassword = keyPass
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
