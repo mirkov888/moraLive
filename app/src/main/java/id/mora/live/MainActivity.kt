@@ -586,6 +586,8 @@ private fun PlatformWebView(
                 factory = { viewContext ->
                     WebView(viewContext).apply {
                         webView = this
+                        // Keep the embedded player on a hardware-accelerated rendering path.
+                        setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         // Some sites reject embedded WebViews identified by the "wv" token.
