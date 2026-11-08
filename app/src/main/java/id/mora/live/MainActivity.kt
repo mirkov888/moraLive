@@ -380,6 +380,7 @@ private fun PlatformWebView(
     var webView by remember(platform.url) { mutableStateOf<WebView?>(null) }
     var progress by remember(platform.url) { mutableIntStateOf(0) }
     var hasError by remember(platform.url) { mutableStateOf(false) }
+    var errorDetail by remember(platform.url) { mutableStateOf("Koneksi ke server ditolak.") }
     val context = LocalContext.current
 
     BackHandler(enabled = true) {
@@ -397,7 +398,7 @@ private fun PlatformWebView(
                 Text("Situs resmi", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            TextButton(onClick = { webView?.reload(); hasError = false }) { Text("Muat ulang") }
+            TextButton(onClick = { hasError = false; progress = 0; webView?.reload() }) { Text("Muat ulang") }
             TextButton(onClick = onClose) { Text("Tutup") }
         }
         if (progress in 1..99) {
@@ -405,14 +406,18 @@ private fun PlatformWebView(
         }
         if (hasError) {
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 EmptyState(
-                    "Situs tidak bisa dibuka di dalam aplikasi",
-                    "Platform mungkin membatasi WebView atau memerlukan browser resminya. Coba buka lewat browser eksternal."
+                    "Koneksi ke ${platform.name} ditolak",
+                    "$errorDetail\n\nCoba ganti jaringan, nonaktifkan VPN/proxy sementara, atau buka lewat browser."
                 )
                 Button(
+                    onClick = { hasError = false; progress = 0 },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Coba lagi") }
+                OutlinedButton(
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(platform.url))
                         context.startActivity(intent)
@@ -421,7 +426,7 @@ private fun PlatformWebView(
                 ) { Text("Buka di browser") }
             }
         }
-        key(platform.url) {
+        if (!hasError) key(platform.url) {
             AndroidView(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 factory = { viewContext ->
@@ -453,6 +458,7 @@ private fun PlatformWebView(
                                 error: WebResourceError?
                             ) {
                                 if (request?.isForMainFrame == true) {
+                                    errorDetail = error?.description?.toString() ?: "net::ERR_CONNECTION_FAILED"
                                     hasError = true
                                     progress = 100
                                 }
