@@ -2,11 +2,12 @@
 
 Mora Live is a native-first Android hub for discovering and accessing live-streaming platforms.
 
-## Current version: v0.3.1 — Account Center
+## Current version: v0.3.2 — Native platform discovery
 
 ### Implemented foundation
 - Kotlin + Jetpack Compose + Material 3 dark interface.
 - Persistent platform favorites using Preferences DataStore.
+- Native platform discovery and platform detail screens; official sites open only after the user taps the watch action.
 - Platform search with category filters (current categories classify platform entries, not live streamer metadata).
 - Persistent on-device platform watch history.
 - Hybrid WebView with progress, reload, error state, and Android back navigation.
@@ -48,6 +49,11 @@ Mora Live is a native-first Android hub for discovering and accessing live-strea
 - [ ] Performance and battery optimization
 - [ ] Crash reporting and resilient error handling
 - [ ] Signed release APK with a persistent signing key
+
+### v0.3.2 — Native Discovery
+- [x] Native platform detail screen before opening external streaming sites
+- [x] Keep official WebView behind an explicit watch action
+- [x] Clear empty state explaining that verified streamer directory data is not yet connected
 
 ### v0.3.1 — Account Center
 - [x] Dedicated Account Center navigation and native provider cards
