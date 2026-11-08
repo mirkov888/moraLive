@@ -199,8 +199,7 @@ private fun MoraLiveApp() {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("LIVE, YOUR WAY", color = MaterialTheme.colorScheme.secondary,
                                     style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                                Text("Temukan siaran
-favoritmu.", style = MaterialTheme.typography.headlineLarge,
+                                Text("Temukan siaran\\nfavoritmu.", style = MaterialTheme.typography.headlineLarge,
                                     fontWeight = FontWeight.ExtraBold)
                                 Text("Akses IDN Live dan SHOWROOM dari satu aplikasi.",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
