@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.content.Intent
 import android.net.Uri
+import android.view.View
+import android.widget.FrameLayout
+import androidx.browser.customtabs.CustomTabsIntent
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -33,6 +36,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -82,6 +87,7 @@ private fun MoraLiveApp() {
     var selectedCategory by remember { mutableStateOf("Semua") }
     var selected by remember { mutableStateOf("Beranda") }
     var searchQuery by remember { mutableStateOf("") }
+    var liveUrlInput by remember { mutableStateOf("https://www.idn.app/") }
     val detailPlatform = platforms.firstOrNull { it.name == selected }
     val activePlatform = platforms.firstOrNull { selected == "web:${it.name}" }
 
@@ -168,6 +174,7 @@ private fun MoraLiveApp() {
             when {
                 activePlatform != null -> PlatformWebView(
                     platform = activePlatform,
+                    initialUrl = liveUrlInput,
                     modifier = Modifier.padding(padding).fillMaxSize(),
                     onClose = { selected = activePlatform.name }
                 )
@@ -182,12 +189,29 @@ private fun MoraLiveApp() {
                         SuggestionChip(onClick = {}, label = { Text(detailPlatform.region) })
                         SuggestionChip(onClick = {}, label = { Text(detailPlatform.category) })
                     }
+                    if (detailPlatform.name == "IDN Live") {
+                        OutlinedTextField(value = liveUrlInput, onValueChange = { liveUrlInput = it },
+                            modifier = Modifier.fillMaxWidth(), singleLine = true,
+                            label = { Text("URL siaran langsung IDN") },
+                            placeholder = { Text("https://www.idn.app/nama-streamer/live/...") })
+                        Text("Tempel tautan live IDN agar langsung membuka siaran, bukan homepage.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
                     PlatformCard(
                         platform = detailPlatform,
                         isFavorite = detailPlatform.name in favorites,
                         onFavorite = { toggleFavorite(detailPlatform.name) },
-                        onOpen = { recordWatch(detailPlatform.name); selected = "web:${detailPlatform.name}" },
-                        actionLabel = "Tonton di ${detailPlatform.name}"
+                        onOpen = {
+                            val candidate = if (detailPlatform.name == "IDN Live") liveUrlInput.trim() else detailPlatform.url
+                            val uri = Uri.parse(candidate)
+                            val validIdn = uri.scheme == "https" && (uri.host == "idn.app" || (uri.host?.endsWith(".idn.app") == true))
+                            if (detailPlatform.name != "IDN Live" || validIdn) {
+                                recordWatch(detailPlatform.name)
+                                liveUrlInput = candidate
+                                selected = "web:${detailPlatform.name}"
+                            }
+                        },
+                        actionLabel = "Tonton siaran"
                     )
                     EmptyState(
                         "Direktori streamer belum tersedia",
