@@ -552,10 +552,13 @@ private fun EmptyState(title: String, message: String) {
 @Composable
 private fun PlatformWebView(
     platform: Platform,
+    initialUrl: String,
     modifier: Modifier = Modifier,
     onClose: () -> Unit
 ) {
     var webView by remember(platform.url) { mutableStateOf<WebView?>(null) }
+    var fullScreenView by remember { mutableStateOf<View?>(null) }
+    var fullScreenCallback by remember { mutableStateOf<WebChromeClient.CustomViewCallback?>(null) }
     var progress by remember(platform.url) { mutableIntStateOf(0) }
     var hasError by remember(platform.url) { mutableStateOf(false) }
     var errorDetail by remember(platform.url) { mutableStateOf("Koneksi ke server ditolak.") }
@@ -577,6 +580,7 @@ private fun PlatformWebView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             TextButton(onClick = { hasError = false; progress = 0; webView?.reload() }) { Text("Muat ulang") }
+            TextButton(onClick = { val target = webView?.url ?: initialUrl; context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target))) }) { Text("Buka di browser") }
             TextButton(onClick = onClose) { Text("Tutup") }
         }
         if (progress in 1..99) {
@@ -663,11 +667,11 @@ private fun PlatformWebView(
                             }
                         }
                         webChromeClient = object : WebChromeClient() {
-                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                progress = newProgress
-                            }
+                            override fun onProgressChanged(view: WebView?, newProgress: Int) { progress = newProgress }
+                            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) { if (view != null) { fullScreenView = view; fullScreenCallback = callback; this@apply.visibility = View.INVISIBLE } }
+                            override fun onHideCustomView() { fullScreenView = null; fullScreenCallback?.onCustomViewHidden(); fullScreenCallback = null; this@apply.visibility = View.VISIBLE }
                         }
-                        loadUrl(platform.url)
+                        loadUrl(initialUrl.ifBlank { platform.url })
                     }
                 },
                 update = { webView = it },
@@ -679,6 +683,11 @@ private fun PlatformWebView(
                     it.destroy()
                 }
             )
+        }
+        fullScreenView?.let { videoView ->
+            Dialog(onDismissRequest = { fullScreenView = null; fullScreenCallback?.onCustomViewHidden(); fullScreenCallback = null; webView?.visibility = View.VISIBLE }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                AndroidView(modifier = Modifier.fillMaxSize(), factory = { viewContext -> FrameLayout(viewContext).apply { setBackgroundColor(android.graphics.Color.BLACK); addView(videoView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)) } })
+            }
         }
     }
 }
