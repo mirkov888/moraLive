@@ -434,6 +434,11 @@ private fun PlatformWebView(
                         webView = this
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
+                        // Some sites reject embedded WebViews identified by the "wv" token.
+                        // Present a standard mobile Chrome UA while retaining WebView rendering.
+                        settings.userAgentString = settings.userAgentString
+                            .replace("; wv", "")
+                            .replace("Version/4.0 ", "")
                         settings.mediaPlaybackRequiresUserGesture = false
                         settings.loadsImagesAutomatically = true
                         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
