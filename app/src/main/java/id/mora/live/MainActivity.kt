@@ -3,7 +3,6 @@ package id.mora.live
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -19,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 
 private data class Platform(val name: String, val subtitle: String, val url: String)
 
@@ -38,15 +38,18 @@ private fun MoraLiveApp() {
     )
     var selected by remember { mutableStateOf("Beranda") }
     val favorites = remember { mutableStateListOf<String>() }
+    val activePlatform = platforms.firstOrNull { it.name == selected }
 
-    val activePlatform = platforms.firstOrNull { it.name == selected }\n\n    MaterialTheme(colorScheme = darkColorScheme()) {
+    MaterialTheme(colorScheme = darkColorScheme()) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("Mora Live") },
-                    actions = { IconButton(onClick = { selected = "Notifikasi" }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifikasi")
-                    } }
+                    actions = {
+                        IconButton(onClick = { selected = "Notifikasi" }) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifikasi")
+                        }
+                    }
                 )
             },
             bottomBar = {
@@ -55,7 +58,12 @@ private fun MoraLiveApp() {
                         NavigationBarItem(
                             selected = selected == item,
                             onClick = { selected = item },
-                            icon = { Icon(if (item == "Beranda") Icons.Default.LiveTv else Icons.Default.Favorite, null) },
+                            icon = {
+                                Icon(
+                                    if (item == "Beranda") Icons.Default.LiveTv else Icons.Default.Favorite,
+                                    contentDescription = item
+                                )
+                            },
                             label = { Text(item) }
                         )
                     }
@@ -63,45 +71,65 @@ private fun MoraLiveApp() {
             }
         ) { padding ->
             when {
-                activePlatform != null -> Column(Modifier.padding(padding).fillMaxSize()) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                activePlatform != null -> Column(
+                    Modifier.padding(padding).fillMaxSize()
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(activePlatform.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                         TextButton(onClick = { selected = "Beranda" }) { Text("Tutup") }
                     }
-                    AndroidView(
-                        modifier = Modifier.fillMaxSize(),
-                        factory = { context ->
-                            WebView(context).apply {
-                                settings.javaScriptEnabled = true
-                                settings.domStorageEnabled = true
-                                webViewClient = WebViewClient()
-                                loadUrl(activePlatform.url)
-                            }
-                        },
-                        update = { it.loadUrl(activePlatform.url) }
-                    )
+                    key(activePlatform.url) {
+                        AndroidView(
+                            modifier = Modifier.fillMaxSize(),
+                            factory = { context ->
+                                WebView(context).apply {
+                                    settings.javaScriptEnabled = true
+                                    settings.domStorageEnabled = true
+                                    settings.mediaPlaybackRequiresUserGesture = true
+                                    webViewClient = WebViewClient()
+                                    loadUrl(activePlatform.url)
+                                }
+                            },
+                            onRelease = { it.stopLoading(); it.destroy() }
+                        )
+                    }
                 }
-                selected == "Favorit" -> LazyColumn(Modifier.padding(padding).padding(16.dp)) {
+                selected == "Favorit" -> LazyColumn(
+                    Modifier.padding(padding).padding(16.dp)
+                ) {
                     item { Text("Streamer favorit", style = MaterialTheme.typography.headlineSmall) }
                     item { Spacer(Modifier.height(12.dp)) }
-                    if (favorites.isEmpty()) item { Text("Belum ada favorit. Tambahkan dari beranda.") }
+                    if (favorites.isEmpty()) {
+                        item { Text("Belum ada favorit. Tambahkan dari beranda.") }
+                    }
                     items(favorites) { Text(it, Modifier.padding(vertical = 8.dp)) }
                 }
-                selected == "Notifikasi" -> Column(Modifier.padding(padding).padding(20.dp)) {
+                selected == "Notifikasi" -> Column(
+                    Modifier.padding(padding).padding(20.dp)
+                ) {
                     Text("Notifikasi", style = MaterialTheme.typography.headlineSmall)
                     Spacer(Modifier.height(8.dp))
-                    Text("Pusat notifikasi siap dikembangkan. Status live otomatis memerlukan API resmi platform.")
+                    Text("Status live otomatis memerlukan API resmi atau mekanisme notifikasi dari platform.")
                     Button(onClick = { selected = "Beranda" }) { Text("Kembali") }
                 }
                 else -> LazyColumn(Modifier.padding(padding).padding(16.dp)) {
                     item {
                         Text("Temukan live streaming", style = MaterialTheme.typography.headlineSmall)
-                        Text("Pilih platform untuk mulai menonton.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Pilih platform untuk mulai menonton.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Spacer(Modifier.height(16.dp))
                     }
                     items(platforms) { platform ->
                         Card(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Column(Modifier.weight(1f)) {
                                     Text(platform.name, style = MaterialTheme.typography.titleLarge)
                                     Text(platform.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -121,7 +149,10 @@ private fun MoraLiveApp() {
                     }
                     item {
                         Text("Hybrid player", style = MaterialTheme.typography.titleMedium)
-                        Text("Fondasi UI tersedia. Integrasi WebView/native playback akan diaktifkan setelah alur resmi dan URL streaming yang didukung tiap platform diverifikasi.")
+                        Text(
+                            "Saat ini pemutaran menggunakan situs resmi di WebView. " +
+                                "Native playback akan dipilih hanya jika platform menyediakan stream/API resmi yang didukung."
+                        )
                     }
                 }
             }
