@@ -82,7 +82,8 @@ private fun MoraLiveApp() {
     var selectedCategory by remember { mutableStateOf("Semua") }
     var selected by remember { mutableStateOf("Beranda") }
     var searchQuery by remember { mutableStateOf("") }
-    val activePlatform = platforms.firstOrNull { it.name == selected }
+    val detailPlatform = platforms.firstOrNull { it.name == selected }
+    val activePlatform = platforms.firstOrNull { selected == "web:${it.name}" }
 
     fun recordWatch(platformName: String) {
         scope.launch {
@@ -168,8 +169,34 @@ private fun MoraLiveApp() {
                 activePlatform != null -> PlatformWebView(
                     platform = activePlatform,
                     modifier = Modifier.padding(padding).fillMaxSize(),
-                    onClose = { selected = "Beranda" }
+                    onClose = { selected = activePlatform.name }
                 )
+
+                detailPlatform != null -> Column(
+                    modifier = Modifier.padding(padding).fillMaxSize().padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(detailPlatform.name, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold)
+                    Text(detailPlatform.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SuggestionChip(onClick = {}, label = { Text(detailPlatform.region) })
+                        SuggestionChip(onClick = {}, label = { Text(detailPlatform.category) })
+                    }
+                    PlatformCard(
+                        platform = detailPlatform,
+                        isFavorite = detailPlatform.name in favorites,
+                        onFavorite = { toggleFavorite(detailPlatform.name) },
+                        onOpen = { recordWatch(detailPlatform.name); selected = "web:${detailPlatform.name}" },
+                        actionLabel = "Tonton di ${detailPlatform.name}"
+                    )
+                    EmptyState(
+                        "Direktori streamer belum tersedia",
+                        "Halaman ini sudah native Mora Live. Profil, foto, bio, kategori streamer, dan status LIVE akan ditampilkan setelah sumber data resmi platform tersedia. Tidak ada data streamer contoh yang dibuat seolah-olah live."
+                    )
+                    OutlinedButton(onClick = { selected = "Search" }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Jelajahi platform lain")
+                    }
+                }
 
                 selected == "Search" -> LazyColumn(
                     modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
@@ -224,7 +251,7 @@ private fun MoraLiveApp() {
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
                             onOpen = { recordWatch(platform.name); selected = platform.name },
-                            actionLabel = "Buka platform"
+                            actionLabel = "Lihat detail"
                         )
                     }
                     item {
@@ -350,11 +377,11 @@ private fun MoraLiveApp() {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("LIVE, YOUR WAY", color = MaterialTheme.colorScheme.secondary,
+                                Text("DISCOVER", color = MaterialTheme.colorScheme.secondary,
                                     style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                 Text("Temukan siaran\nfavoritmu.", style = MaterialTheme.typography.headlineLarge,
                                     fontWeight = FontWeight.ExtraBold)
-                                Text("Akses IDN Live dan SHOWROOM dari satu aplikasi.",
+                                Text("Jelajahi platform secara native. Buka situs resmi hanya saat kamu memilih menonton.",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -373,7 +400,7 @@ private fun MoraLiveApp() {
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically) {
-                            Text("Platform", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("Discover platform", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Text("${platforms.size} tersedia", color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelMedium)
                         }
