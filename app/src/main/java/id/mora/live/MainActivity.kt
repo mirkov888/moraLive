@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.widget.FrameLayout
-import androidx.browser.customtabs.CustomTabsIntent
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
