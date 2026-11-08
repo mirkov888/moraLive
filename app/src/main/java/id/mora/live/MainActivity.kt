@@ -250,7 +250,7 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { recordWatch(platform.name); selected = platform.name },
+                            onOpen = { selected = platform.name },
                             actionLabel = "Lihat detail"
                         )
                     }
@@ -282,7 +282,7 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { recordWatch(platform.name); selected = platform.name }
+                            onOpen = { selected = platform.name }
                         )
                     }
                 }
@@ -418,7 +418,7 @@ private fun MoraLiveApp() {
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
                             onOpen = { selected = platform.name },
-                            actionLabel = "Buka platform"
+                            actionLabel = "Lihat detail"
                         )
                     }
                     item {
