@@ -143,7 +143,7 @@ private fun MoraLiveApp() {
             },
             bottomBar = {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    listOf("Beranda", "Search", "Favorit", "Login").forEach { item ->
+                    listOf("Beranda", "Search", "Favorit", "Account").forEach { item ->
                         NavigationBarItem(
                             selected = selected == item,
                             onClick = { selected = item },
@@ -289,55 +289,37 @@ private fun MoraLiveApp() {
                     }
                 }
 
-                selected == "Login" -> LazyColumn(
+                selected == "Account" -> LazyColumn(
                     modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        Text("Akun & Login", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Hubungkan akun platform live dari satu tempat. Login akan memakai halaman otorisasi resmi setiap layanan.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("Account Center", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("Kelola akses akun live streaming dari satu tempat.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     item {
                         EmptyState(
-                            "Login belum diaktifkan",
-                            "Menu ini sudah disiapkan. OAuth dan penyimpanan sesi aman perlu konfigurasi aplikasi developer resmi dan callback untuk setiap layanan. Jangan masukkan password platform langsung ke Mora Live."
+                            "Login aman melalui platform resmi",
+                            "Tombol di bawah membuka halaman login resmi di browser. Status Connected baru tersedia setelah OAuth resmi dan callback aplikasi dikonfigurasi. Mora Live tidak menyimpan password."
                         )
                     }
                     item {
-                        LoginProviderCard(
-                            name = "IDN Live",
-                            detail = "Login akun, chat, gift, dan fitur interaksi memerlukan dukungan integrasi resmi IDN.",
-                            status = "Menunggu akses resmi"
-                        )
+                        AccountProviderCard("IDN Live", "Login akun IDN. Integrasi OAuth pihak ketiga dan status akun masih menunggu dukungan resmi.", "Web login", "https://www.idn.app/")
                     }
                     item {
-                        LoginProviderCard(
-                            name = "SHOWROOM",
-                            detail = "Login dan interaksi pengguna memerlukan metode autentikasi/API resmi SHOWROOM.",
-                            status = "Menunggu akses resmi"
-                        )
+                        AccountProviderCard("SHOWROOM", "Login akun SHOWROOM melalui situs resmi. Sinkronisasi sesi ke Mora Live belum tersedia.", "Web login", "https://www.showroom-live.com/")
                     }
                     item {
-                        LoginProviderCard(
-                            name = "Twitch",
-                            detail = "OAuth resmi tersedia. Scope chat dan fitur akun diminta sesuai izin yang diperlukan.",
-                            status = "Siap diintegrasikan"
-                        )
+                        AccountProviderCard("Twitch", "Siap untuk integrasi OAuth setelah Client ID dan redirect URI aplikasi didaftarkan.", "OAuth planned", "https://www.twitch.tv/login")
                     }
                     item {
-                        LoginProviderCard(
-                            name = "Kick",
-                            detail = "OAuth 2.1 dengan Authorization Code + PKCE tersedia untuk integrasi akun dan API.",
-                            status = "Siap diintegrasikan"
-                        )
+                        AccountProviderCard("Kick", "Siap untuk integrasi OAuth 2.1 + PKCE setelah aplikasi didaftarkan dan callback dikonfigurasi.", "OAuth planned", "https://kick.com/login")
                     }
                     item {
                         Text(
-                            "Keamanan: Mora Live tidak akan meminta atau menyimpan password akun platform. Token harus dienkripsi dan hanya meminta izin minimum.",
+                            "Membuka halaman login belum berarti akun sudah terhubung ke Mora Live. Chat, gift, dan data akun memerlukan API serta izin resmi masing-masing platform.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -425,22 +407,30 @@ private fun MoraLiveApp() {
 }
 
 @Composable
-private fun LoginProviderCard(name: String, detail: String, status: String) {
+private fun AccountProviderCard(name: String, detail: String, status: String, loginUrl: String) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.AccountCircle, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                SuggestionChip(onClick = {}, label = { Text(status) })
+                Text(status, style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary)
             }
             Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(
+                onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(loginUrl)))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Buka login resmi") }
         }
     }
 }
