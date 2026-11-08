@@ -25,9 +25,32 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
-      - name: Upload APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: mora-live-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+      - name: Prepare release signing key
+        if: ${{ secrets.MORA_KEYSTORE_BASE64 != '' && secrets.MORA_KEYSTORE_PASSWORD != '' && secrets.MORA_KEY_ALIAS != '' && secrets.MORA_KEY_PASSWORD != '' }}
+        env:
+          MORA_KEYSTORE_BASE64: ${{ secrets.MORA_KEYSTORE_BASE64 }}
+          MORA_KEYSTORE_PASSWORD: ${{ secrets.MORA_KEYSTORE_PASSWORD }}
+          MORA_KEY_ALIAS: ${{ secrets.MORA_KEY_ALIAS }}
+          MORA_KEY_PASSWORD: ${{ secrets.MORA_KEY_PASSWORD }}
+        run: |
+          echo "$MORA_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mora-release.jks"
+          echo "MORA_KEYSTORE_FILE=$RUNNER_TEMP/mora-release.jks" >> "$GITHUB_ENV"
+          echo "MORA_KEYSTORE_PASSWORD=$MORA_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "MORA_KEY_ALIAS=$MORA_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "MORA_KEY_PASSWORD=$MORA_KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Build signed release APK
+        if: ${{ secrets.MORA_KEYSTORE_BASE64 != '' && secrets.MORA_KEYSTORE_PASSWORD != '' && secrets.MORA_KEY_ALIAS != '' && secrets.MORA_KEY_PASSWORD != '' }}
+        run: gradle --no-daemon assembleRelease
+      - name: Upload signed release APK
+        if: ${{ secrets.MORA_KEYSTORE_BASE64 != '' && secrets.MORA_KEYSTORE_PASSWORD != '' && secrets.MORA_KEY_ALIAS != '' && secrets.MORA_KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mora-live-release-apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
