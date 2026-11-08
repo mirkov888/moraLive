@@ -2,7 +2,7 @@
 
 Mora Live is a native-first Android hub for discovering and accessing live-streaming platforms.
 
-## Current target: v0.3.0 — Live Experience
+## Current version: v0.3.1 — Account Center
 
 ### Implemented foundation
 - Kotlin + Jetpack Compose + Material 3 dark interface.
@@ -11,7 +11,7 @@ Mora Live is a native-first Android hub for discovering and accessing live-strea
 - Persistent on-device platform watch history.
 - Hybrid WebView with progress, reload, error state, and Android back navigation.
 - WebView hardening and mobile-browser user-agent compatibility adjustments.
-- Dedicated Account & Login hub UI for IDN Live, SHOWROOM, Twitch, and Kick.
+- Dedicated Account Center with official website login links for IDN Live, SHOWROOM, Twitch, and Kick. This is browser-based sign-in only; OAuth token connection and in-app account status are not yet active.
 - AndroidX Media3 dependencies are present; native playback is not yet connected to any platform stream.
 
 ### Wots48-inspired product direction (Mora Live 1–5)
@@ -49,6 +49,13 @@ Mora Live is a native-first Android hub for discovering and accessing live-strea
 - [ ] Crash reporting and resilient error handling
 - [ ] Signed release APK with a persistent signing key
 
+### v0.3.1 — Account Center
+- [x] Dedicated Account Center navigation and native provider cards
+- [x] Open official platform login pages for IDN Live, SHOWROOM, Twitch, and Kick
+- [ ] OAuth callback and secure token storage
+- [ ] Connected account profile, disconnect, and multi-account management
+- [ ] Chat and gift integrations where official APIs permit
+
 ## Build locally
 
 Requirements: Android Studio, JDK 17, and Android SDK 35.
@@ -63,4 +70,4 @@ APK output: `app/build/outputs/apk/debug/app-debug.apk`.
 
 Login, chat, gifts, streamer catalogs, live status, news, and native playback must use official APIs, documented OAuth flows, approved feeds, or platform-permitted interfaces. Mora Live must not collect platform passwords, scrape private endpoints, extract protected stream URLs, bypass DRM, or imitate authenticated sessions.
 
-The current Login screen is a UI hub only; OAuth connections are not yet active. The current watch history records platform visits, not individual streamer/video playback.
+The current Account Center opens official login pages in the browser; it does not yet receive OAuth callbacks or mark accounts as connected. The current watch history records platform visits, not individual streamer/video playback.
