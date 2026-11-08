@@ -13,6 +13,11 @@ permissions:
 jobs:
   debug-apk:
     runs-on: ubuntu-latest
+    env:
+      MORA_KEYSTORE_BASE64: ${{ secrets.MORA_KEYSTORE_BASE64 }}
+      MORA_KEYSTORE_PASSWORD: ${{ secrets.MORA_KEYSTORE_PASSWORD }}
+      MORA_KEY_ALIAS: ${{ secrets.MORA_KEY_ALIAS }}
+      MORA_KEY_PASSWORD: ${{ secrets.MORA_KEY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +37,7 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
       - name: Prepare release signing key
-        if: ${{ secrets.MORA_KEYSTORE_BASE64 != '' && secrets.MORA_KEYSTORE_PASSWORD != '' && secrets.MORA_KEY_ALIAS != '' && secrets.MORA_KEY_PASSWORD != '' }}
+        if: ${{ env.MORA_KEYSTORE_BASE64 != '' && env.MORA_KEYSTORE_PASSWORD != '' && env.MORA_KEY_ALIAS != '' && env.MORA_KEY_PASSWORD != '' }}
         env:
           MORA_KEYSTORE_BASE64: ${{ secrets.MORA_KEYSTORE_BASE64 }}
           MORA_KEYSTORE_PASSWORD: ${{ secrets.MORA_KEYSTORE_PASSWORD }}
