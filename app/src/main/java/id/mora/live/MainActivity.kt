@@ -41,12 +41,14 @@ import kotlinx.coroutines.flow.map
 
 private val android.content.Context.moraDataStore by preferencesDataStore(name = "mora_live_settings")
 private val favoritePlatformsKey = stringSetPreferencesKey("favorite_platforms")
+private val watchHistoryKey = stringSetPreferencesKey("watch_history")
 
 private data class Platform(
     val name: String,
     val subtitle: String,
     val url: String,
-    val region: String
+    val region: String,
+    val category: String
 )
 
 class MainActivity : ComponentActivity() {
@@ -63,8 +65,8 @@ private fun MoraLiveApp() {
     val scope = rememberCoroutineScope()
     val platforms = remember {
         listOf(
-            Platform("IDN Live", "Live streaming Indonesia", "https://www.idn.app/", "INDONESIA"),
-            Platform("SHOWROOM", "Japanese live streaming", "https://www.showroom-live.com/", "JAPAN")
+            Platform("IDN Live", "Live streaming Indonesia", "https://www.idn.app/", "INDONESIA", "Variety"),
+            Platform("SHOWROOM", "Japanese live streaming", "https://www.showroom-live.com/", "JAPAN", "Idol")
         )
     }
     val favoriteFlow = remember {
@@ -73,9 +75,25 @@ private fun MoraLiveApp() {
         }
     }
     val favorites by favoriteFlow.collectAsState(initial = emptySet())
+    val historyFlow = remember {
+        context.moraDataStore.data.map { preferences -> preferences[watchHistoryKey] ?: emptySet() }
+    }
+    val watchHistory by historyFlow.collectAsState(initial = emptySet())
+    var selectedCategory by remember { mutableStateOf("Semua") }
     var selected by remember { mutableStateOf("Beranda") }
     var searchQuery by remember { mutableStateOf("") }
     val activePlatform = platforms.firstOrNull { it.name == selected }
+
+    fun recordWatch(platformName: String) {
+        scope.launch {
+            context.moraDataStore.edit { preferences ->
+                val updated = (preferences[watchHistoryKey] ?: emptySet()).toMutableSet()
+                updated.remove(platformName)
+                updated.add(platformName)
+                preferences[watchHistoryKey] = updated
+            }
+        }
+    }
 
     fun toggleFavorite(platformName: String) {
         scope.launch {
@@ -166,6 +184,11 @@ private fun MoraLiveApp() {
                         )
                     }
                     item {
+                        OutlinedButton(onClick = { selected = "Riwayat" }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Buka riwayat tontonan")
+                        }
+                    }
+                    item {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -176,9 +199,21 @@ private fun MoraLiveApp() {
                             shape = RoundedCornerShape(16.dp)
                         )
                     }
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("Semua", "Variety", "Idol").forEach { category ->
+                                FilterChip(
+                                    selected = selectedCategory == category,
+                                    onClick = { selectedCategory = category },
+                                    label = { Text(category) }
+                                )
+                            }
+                        }
+                    }
                     val searchablePlatforms = platforms.filter {
-                        it.name.contains(searchQuery, ignoreCase = true) ||
-                            it.subtitle.contains(searchQuery, ignoreCase = true)
+                        (selectedCategory == "Semua" || it.category == selectedCategory) &&
+                            (it.name.contains(searchQuery, ignoreCase = true) ||
+                            it.subtitle.contains(searchQuery, ignoreCase = true))
                     }
                     if (searchablePlatforms.isEmpty()) {
                         item { EmptyState("Platform tidak ditemukan", "Coba kata kunci lain.") }
@@ -188,7 +223,7 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { selected = platform.name },
+                            onOpen = { recordWatch(platform.name); selected = platform.name },
                             actionLabel = "Buka platform"
                         )
                     }
@@ -197,6 +232,30 @@ private fun MoraLiveApp() {
                             "Daftar akun dan status live dimuat dari platform resmi. Mora Live tidak menampilkan data streamer palsu.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                selected == "Riwayat" -> LazyColumn(
+                    modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text("Riwayat tontonan", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("Platform yang terakhir kamu buka tersimpan di perangkat ini.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    val recent = platforms.filter { it.name in watchHistory }.reversed()
+                    if (recent.isEmpty()) {
+                        item { EmptyState("Belum ada riwayat", "Buka platform dari Beranda atau Search untuk mencatatnya.") }
+                    }
+                    items(recent, key = { it.name }) { platform ->
+                        PlatformCard(
+                            platform = platform,
+                            isFavorite = platform.name in favorites,
+                            onFavorite = { toggleFavorite(platform.name) },
+                            onOpen = { recordWatch(platform.name); selected = platform.name }
                         )
                     }
                 }
