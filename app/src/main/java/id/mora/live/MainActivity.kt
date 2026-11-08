@@ -124,7 +124,7 @@ private fun MoraLiveApp() {
             },
             bottomBar = {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    listOf("Beranda", "Streamer", "Favorit").forEach { item ->
+                    listOf("Beranda", "Search", "Favorit").forEach { item ->
                         NavigationBarItem(
                             selected = selected == item,
                             onClick = { selected = item },
@@ -132,7 +132,7 @@ private fun MoraLiveApp() {
                                 Icon(
                                     when (item) {
                                         "Beranda" -> Icons.Default.LiveTv
-                                        "Streamer" -> Icons.Default.Search
+                                        "Search" -> Icons.Default.Search
                                         else -> Icons.Default.Favorite
                                     },
                                     contentDescription = item
@@ -151,15 +151,15 @@ private fun MoraLiveApp() {
                     onClose = { selected = "Beranda" }
                 )
 
-                selected == "Streamer" -> LazyColumn(
+                selected == "Search" -> LazyColumn(
                     modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        Text("Jelajahi streamer", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("Cari platform live", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                         Text(
-                            "Pilih platform untuk membuka daftar streamer dan siaran langsung dari layanan resminya.",
+                            "Cari dan pilih platform live. Platform baru bisa ditambahkan di sini tanpa mengubah menu utama.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -169,7 +169,7 @@ private fun MoraLiveApp() {
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
                             onOpen = { selected = platform.name },
-                            actionLabel = "Lihat streamer"
+                            actionLabel = "Buka platform"
                         )
                     }
                     item {
@@ -205,7 +205,7 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = true,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { selected = "Streamer" }
+                            onOpen = { selected = platform.name }
                         )
                     }
                 }
@@ -236,7 +236,7 @@ private fun MoraLiveApp() {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("LIVE, YOUR WAY", color = MaterialTheme.colorScheme.secondary,
                                     style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                                Text("Temukan siaran\\nfavoritmu.", style = MaterialTheme.typography.headlineLarge,
+                                Text("Temukan siaran\nfavoritmu.", style = MaterialTheme.typography.headlineLarge,
                                     fontWeight = FontWeight.ExtraBold)
                                 Text("Akses IDN Live dan SHOWROOM dari satu aplikasi.",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
