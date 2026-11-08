@@ -1,21 +1,57 @@
 # Mora Live
 
-Mora Live is an Android companion app for accessing IDN Live and SHOWROOM from one interface.
+Mora Live is a native-first Android hub for discovering and accessing live-streaming platforms.
 
-## Current version: 0.2.0-dev
+## Current target: v0.3.0 — Live Experience
 
+### Implemented foundation
 - Kotlin + Jetpack Compose + Material 3 dark interface.
-- Redesigned home dashboard with platform search.
-- Persistent platform favorites backed by Preferences DataStore.
-- Favorites can be opened or removed from the favorites screen.
-- Hybrid WebView with page progress, reload, main-frame error state, and Android back navigation.
-- WebView hardening: file/content access disabled and mixed content blocked.
-- Notification center explains the current official-integration requirement.
-- AndroidX Media3 dependencies reserved for approved native playback.
+- Persistent platform favorites using Preferences DataStore.
+- Platform search with category filters (current categories classify platform entries, not live streamer metadata).
+- Persistent on-device platform watch history.
+- Hybrid WebView with progress, reload, error state, and Android back navigation.
+- WebView hardening and mobile-browser user-agent compatibility adjustments.
+- Dedicated Account & Login hub UI for IDN Live, SHOWROOM, Twitch, and Kick.
+- AndroidX Media3 dependencies are present; native playback is not yet connected to any platform stream.
+
+### Wots48-inspired product direction (Mora Live 1–5)
+1. **Discover & streamer directory** — native streamer profiles, search, categories, platform labels, and verified LIVE status. Requires official feeds/API or approved data sources.
+2. **Schedule & notifications** — streamer schedules, local reminders, and official live-status notifications. Local reminders and platform status sync are planned for v0.4.0.
+3. **Multi-viewer** — multi-stream layout where platform terms and stream delivery permit it; not yet implemented.
+4. **Oshi & favorites** — persistent favorite platforms are implemented; streamer-level Oshi lists, personal ranking, and categories are planned.
+5. **News & updates** — official announcements, event updates, and platform news feed; awaiting supported feeds/API.
+
+## Roadmap
+
+### v0.2.0 — Foundation
+- [x] Persistent platform favorites
+- [x] Navigation and WebView stability improvements
+- [x] Redesigned dashboard UI
+- [x] Connection/error handling
+
+### v0.3.0 — Live Experience
+- [x] Platform search
+- [x] Platform category filters
+- [x] Platform-level watch history
+- [ ] Streamer search and verified streamer catalog
+- [ ] Streamer-level categories and profiles
+- [ ] Fullscreen and PiP where supported
+- [ ] Native Media3 playback for officially accessible streams
+
+### v0.4.0 — Notification
+- [ ] Notifications when favorite streamers go live (official source required)
+- [ ] Local schedule reminders
+- [ ] Live-status synchronization from official sources
+
+### v1.0.0 — Stable
+- [ ] Physical-device testing across supported Android versions
+- [ ] Performance and battery optimization
+- [ ] Crash reporting and resilient error handling
+- [ ] Signed release APK with a persistent signing key
 
 ## Build locally
 
-Requirements: Android Studio with JDK 17 and Android SDK 35.
+Requirements: Android Studio, JDK 17, and Android SDK 35.
 
 ```bash
 gradle --no-daemon assembleDebug
@@ -25,10 +61,6 @@ APK output: `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Platform integration and safety
 
-The player opens official platform websites in WebView. Native playback requires a platform-approved stream/API and will only be enabled when that interface is available. Online-status notifications likewise require an official API, webhook, or supported notification feed.
+Login, chat, gifts, streamer catalogs, live status, news, and native playback must use official APIs, documented OAuth flows, approved feeds, or platform-permitted interfaces. Mora Live must not collect platform passwords, scrape private endpoints, extract protected stream URLs, bypass DRM, or imitate authenticated sessions.
 
-This project does not scrape private endpoints, extract protected stream URLs, bypass DRM, or imitate authenticated sessions.
-
-## CI
-
-Pushes and pull requests to `main` run the Android debug build. The generated APK is uploaded as the `mora-live-debug-apk` workflow artifact.
+The current Login screen is a UI hub only; OAuth connections are not yet active. The current watch history records platform visits, not individual streamer/video playback.
