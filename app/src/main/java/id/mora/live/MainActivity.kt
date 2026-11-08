@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LiveTv
@@ -124,7 +125,7 @@ private fun MoraLiveApp() {
             },
             bottomBar = {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    listOf("Beranda", "Search", "Favorit").forEach { item ->
+                    listOf("Beranda", "Search", "Favorit", "Login").forEach { item ->
                         NavigationBarItem(
                             selected = selected == item,
                             onClick = { selected = item },
@@ -133,7 +134,8 @@ private fun MoraLiveApp() {
                                     when (item) {
                                         "Beranda" -> Icons.Default.LiveTv
                                         "Search" -> Icons.Default.Search
-                                        else -> Icons.Default.Favorite
+                                        "Favorit" -> Icons.Default.Favorite
+                                        else -> Icons.Default.AccountCircle
                                     },
                                     contentDescription = item
                                 )
@@ -228,6 +230,61 @@ private fun MoraLiveApp() {
                     }
                 }
 
+                selected == "Login" -> LazyColumn(
+                    modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text("Akun & Login", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Hubungkan akun platform live dari satu tempat. Login akan memakai halaman otorisasi resmi setiap layanan.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    item {
+                        EmptyState(
+                            "Login belum diaktifkan",
+                            "Menu ini sudah disiapkan. OAuth dan penyimpanan sesi aman perlu konfigurasi aplikasi developer resmi dan callback untuk setiap layanan. Jangan masukkan password platform langsung ke Mora Live."
+                        )
+                    }
+                    item {
+                        LoginProviderCard(
+                            name = "IDN Live",
+                            detail = "Login akun, chat, gift, dan fitur interaksi memerlukan dukungan integrasi resmi IDN.",
+                            status = "Menunggu akses resmi"
+                        )
+                    }
+                    item {
+                        LoginProviderCard(
+                            name = "SHOWROOM",
+                            detail = "Login dan interaksi pengguna memerlukan metode autentikasi/API resmi SHOWROOM.",
+                            status = "Menunggu akses resmi"
+                        )
+                    }
+                    item {
+                        LoginProviderCard(
+                            name = "Twitch",
+                            detail = "OAuth resmi tersedia. Scope chat dan fitur akun diminta sesuai izin yang diperlukan.",
+                            status = "Siap diintegrasikan"
+                        )
+                    }
+                    item {
+                        LoginProviderCard(
+                            name = "Kick",
+                            detail = "OAuth 2.1 dengan Authorization Code + PKCE tersedia untuk integrasi akun dan API.",
+                            status = "Siap diintegrasikan"
+                        )
+                    }
+                    item {
+                        Text(
+                            "Keamanan: Mora Live tidak akan meminta atau menyimpan password akun platform. Token harus dienkripsi dan hanya meminta izin minimum.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
                 selected == "Notifikasi" -> Column(
                     Modifier.padding(padding).fillMaxSize().padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -304,6 +361,27 @@ private fun MoraLiveApp() {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LoginProviderCard(name: String, detail: String, status: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AccountCircle, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                SuggestionChip(onClick = {}, label = { Text(status) })
+            }
+            Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
