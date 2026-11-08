@@ -107,7 +107,7 @@ private fun MoraLiveApp() {
                     },
                     navigationIcon = {
                         if (selected != "Beranda") {
-                            IconButton(onClick = { selected = if (activePlatform != null) "Streamer" else "Beranda" }) {
+                            IconButton(onClick = { selected = if (activePlatform != null) "Search" else "Beranda" }) {
                                 Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                             }
                         }
