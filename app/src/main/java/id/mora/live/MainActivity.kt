@@ -2,6 +2,9 @@ package id.mora.live
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -103,8 +106,8 @@ private fun MoraLiveApp() {
                         }
                     },
                     navigationIcon = {
-                        if (activePlatform != null) {
-                            IconButton(onClick = { selected = "Beranda" }) {
+                        if (selected != "Beranda") {
+                            IconButton(onClick = { selected = if (activePlatform != null) "Streamer" else "Beranda" }) {
                                 Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                             }
                         }
@@ -121,13 +124,17 @@ private fun MoraLiveApp() {
             },
             bottomBar = {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    listOf("Beranda", "Favorit").forEach { item ->
+                    listOf("Beranda", "Streamer", "Favorit").forEach { item ->
                         NavigationBarItem(
                             selected = selected == item,
                             onClick = { selected = item },
                             icon = {
                                 Icon(
-                                    if (item == "Beranda") Icons.Default.LiveTv else Icons.Default.Favorite,
+                                    when (item) {
+                                        "Beranda" -> Icons.Default.LiveTv
+                                        "Streamer" -> Icons.Default.Search
+                                        else -> Icons.Default.Favorite
+                                    },
                                     contentDescription = item
                                 )
                             },
@@ -143,6 +150,36 @@ private fun MoraLiveApp() {
                     modifier = Modifier.padding(padding).fillMaxSize(),
                     onClose = { selected = "Beranda" }
                 )
+
+                selected == "Streamer" -> LazyColumn(
+                    modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text("Jelajahi streamer", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Pilih platform untuk membuka daftar streamer dan siaran langsung dari layanan resminya.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    items(platforms, key = { it.name }) { platform ->
+                        PlatformCard(
+                            platform = platform,
+                            isFavorite = platform.name in favorites,
+                            onFavorite = { toggleFavorite(platform.name) },
+                            onOpen = { selected = platform.name },
+                            actionLabel = "Lihat streamer"
+                        )
+                    }
+                    item {
+                        Text(
+                            "Daftar akun dan status live dimuat dari platform resmi. Mora Live tidak menampilkan data streamer palsu.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
 
                 selected == "Favorit" -> LazyColumn(
                     modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 18.dp),
@@ -168,7 +205,7 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = true,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { selected = platform.name }
+                            onOpen = { selected = "Streamer" }
                         )
                     }
                 }
@@ -237,7 +274,8 @@ private fun MoraLiveApp() {
                             platform = platform,
                             isFavorite = platform.name in favorites,
                             onFavorite = { toggleFavorite(platform.name) },
-                            onOpen = { selected = platform.name }
+                            onOpen = { selected = "Streamer" },
+                            actionLabel = "Lihat streamer"
                         )
                     }
                     item {
@@ -257,7 +295,8 @@ private fun PlatformCard(
     platform: Platform,
     isFavorite: Boolean,
     onFavorite: () -> Unit,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    actionLabel: String = "Buka platform"
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -291,7 +330,7 @@ private fun PlatformCard(
                 SuggestionChip(onClick = {}, label = { Text(platform.region) })
                 Spacer(Modifier.weight(1f))
                 Button(onClick = onOpen, shape = RoundedCornerShape(14.dp)) {
-                    Text("Buka platform")
+                    Text(actionLabel)
                 }
             }
         }
@@ -323,6 +362,7 @@ private fun PlatformWebView(
     var webView by remember(platform.url) { mutableStateOf<WebView?>(null) }
     var progress by remember(platform.url) { mutableIntStateOf(0) }
     var hasError by remember(platform.url) { mutableStateOf(false) }
+    val context = LocalContext.current
 
     BackHandler(enabled = true) {
         val current = webView
@@ -346,7 +386,22 @@ private fun PlatformWebView(
             LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
         }
         if (hasError) {
-            EmptyState("Halaman gagal dimuat", "Periksa koneksi internet, lalu tekan Muat ulang.")
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                EmptyState(
+                    "Situs tidak bisa dibuka di dalam aplikasi",
+                    "Platform mungkin membatasi WebView atau memerlukan browser resminya. Coba buka lewat browser eksternal."
+                )
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(platform.url))
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Buka di browser") }
+            }
         }
         key(platform.url) {
             AndroidView(
@@ -356,7 +411,9 @@ private fun PlatformWebView(
                         webView = this
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
-                        settings.mediaPlaybackRequiresUserGesture = true
+                        settings.mediaPlaybackRequiresUserGesture = false
+                        settings.loadsImagesAutomatically = true
+                        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                         settings.allowFileAccess = false
                         settings.allowContentAccess = false
                         settings.javaScriptCanOpenWindowsAutomatically = false
@@ -377,7 +434,23 @@ private fun PlatformWebView(
                                 request: WebResourceRequest?,
                                 error: WebResourceError?
                             ) {
-                                if (request?.isForMainFrame == true) hasError = true
+                                if (request?.isForMainFrame == true) {
+                                    hasError = true
+                                    progress = 100
+                                }
+                            }
+
+                            override fun onReceivedHttpError(
+                                view: WebView?,
+                                request: WebResourceRequest?,
+                                errorResponse: android.webkit.WebResourceResponse?
+                            ) {
+                                if (request?.isForMainFrame == true &&
+                                    (errorResponse?.statusCode ?: 200) >= 400
+                                ) {
+                                    hasError = true
+                                    progress = 100
+                                }
                             }
                         }
                         webChromeClient = object : WebChromeClient() {
