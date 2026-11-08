@@ -163,7 +163,25 @@ private fun MoraLiveApp() {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    items(platforms, key = { it.name }) { platform ->
+                    item {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            placeholder = { Text("Cari platform live...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+                    val searchablePlatforms = platforms.filter {
+                        it.name.contains(searchQuery, ignoreCase = true) ||
+                            it.subtitle.contains(searchQuery, ignoreCase = true)
+                    }
+                    if (searchablePlatforms.isEmpty()) {
+                        item { EmptyState("Platform tidak ditemukan", "Coba kata kunci lain.") }
+                    }
+                    items(searchablePlatforms, key = { it.name }) { platform ->
                         PlatformCard(
                             platform = platform,
                             isFavorite = platform.name in favorites,
