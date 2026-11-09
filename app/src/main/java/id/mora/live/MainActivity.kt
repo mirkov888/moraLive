@@ -411,6 +411,33 @@ private fun MoraLiveApp() {
                         }
                     }
                     item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier.size(10.dp).background(androidx.compose.ui.graphics.Color.Red, RoundedCornerShape(50)))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("LIVE SEKARANG", fontWeight = FontWeight.ExtraBold)
+                                    Spacer(Modifier.weight(1f))
+                                    Text("IDN Live", color = MaterialTheme.colorScheme.secondary,
+                                        style = MaterialTheme.typography.labelMedium)
+                                }
+                                Text("Jelajahi siaran yang sedang berlangsung dari direktori resmi IDN.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Button(
+                                    onClick = {
+                                        liveUrlInput = "https://www.idn.app/"
+                                        selected = "web:IDN Live"
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("Jelajahi LIVE IDN") }
+                            }
+                        }
+                    }
+                    item {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
