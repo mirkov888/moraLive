@@ -1,6 +1,8 @@
 package id.mora.live
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.content.Intent
 import android.net.Uri
@@ -590,6 +592,26 @@ private fun PlatformWebView(
     var hasError by remember(initialUrl) { mutableStateOf(false) }
     var errorDetail by remember(initialUrl) { mutableStateOf("Koneksi ke server ditolak.") }
     val context = LocalContext.current
+    var desktopMode by remember { mutableStateOf(false) }
+    var immersiveMode by remember { mutableStateOf(false) }
+    val activity = context as? Activity
+    val originalOrientation = remember(activity) { activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    DisposableEffect(immersiveMode) {
+        if (immersiveMode) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            @Suppress("DEPRECATION")
+            activity?.window?.decorView?.systemUiVisibility = 5894
+        } else {
+            activity?.requestedOrientation = originalOrientation
+            @Suppress("DEPRECATION")
+            activity?.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        }
+        onDispose {
+            activity?.requestedOrientation = originalOrientation
+            @Suppress("DEPRECATION")
+            activity?.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        }
+    }
 
     BackHandler(enabled = true) {
         if (fullScreenView != null) {
