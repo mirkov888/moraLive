@@ -754,6 +754,22 @@ private fun PlatformWebView(
             }
         }
 
+        Row(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Surface(color = androidx.compose.ui.graphics.Color(0x99000000), shape = RoundedCornerShape(22.dp)) {
+                TextButton(onClick = {
+                    desktopMode = !desktopMode
+                    webView?.settings?.userAgentString = if (desktopMode) "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" else "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+                    webView?.settings?.useWideViewPort = desktopMode
+                    webView?.settings?.loadWithOverviewMode = desktopMode
+                    webView?.reload()
+                }) { Text(if (desktopMode) "Mobile" else "Desktop", color = androidx.compose.ui.graphics.Color.White) }
+            }
+            Surface(color = androidx.compose.ui.graphics.Color(0x99000000), shape = RoundedCornerShape(22.dp)) {
+                TextButton(onClick = { immersiveMode = !immersiveMode }) {
+                    Text(if (immersiveMode) "Keluar" else "Fullscreen", color = androidx.compose.ui.graphics.Color.White)
+                }
+            }
+        }
         fullScreenView?.let { videoView ->
             Dialog(
                 onDismissRequest = {
