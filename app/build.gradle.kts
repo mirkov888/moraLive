@@ -10,8 +10,8 @@ android {
         applicationId = "id.mora.live"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "0.3.9"
+        versionCode = 13
+        versionName = "0.4.0"
     }
 
     signingConfigs {
