@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.webkit.WebViewCompat
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.datastore.preferences.core.edit
@@ -591,6 +592,9 @@ private fun PlatformWebView(
     var progress by remember(initialUrl) { mutableIntStateOf(0) }
     var hasError by remember(initialUrl) { mutableStateOf(false) }
     var errorDetail by remember(initialUrl) { mutableStateOf("Koneksi ke server ditolak.") }
+    var showDiagnostics by remember { mutableStateOf(false) }
+    var consoleMessage by remember { mutableStateOf("Belum ada pesan console.") }
+    var rendererCrashed by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var desktopMode by remember { mutableStateOf(false) }
     var immersiveMode by remember { mutableStateOf(false) }
@@ -743,25 +747,33 @@ private fun PlatformWebView(
         }
 
 
-        Surface(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
-            color = androidx.compose.ui.graphics.Color(0xEE20242B),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            TextButton(onClick = {
-                val target = webView?.url?.takeIf { it.startsWith("https://") } ?: initialUrl
-                val chromeIntent = Intent(Intent.ACTION_VIEW, Uri.parse(target)).apply {
-                    setPackage("com.android.chrome")
-                }
-                try {
-                    context.startActivity(chromeIntent)
-                } catch (_: Exception) {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target)))
-                }
-            }) {
-                Text("PUTAR DI CHROME • VIDEO, CHAT & GIFT",
-                    color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold)
+        Surface(modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+            color = androidx.compose.ui.graphics.Color(0xCC20242B), shape = RoundedCornerShape(24.dp)) {
+            TextButton(onClick = { showDiagnostics = true }) {
+                Text("Diagnostik player", color = androidx.compose.ui.graphics.Color.White)
             }
+        }
+        if (showDiagnostics) {
+            val provider = WebViewCompat.getCurrentWebViewPackage(context)
+            AlertDialog(
+                onDismissRequest = { showDiagnostics = false },
+                title = { Text("Diagnostik WebView") },
+                text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Provider: " + (provider?.packageName ?: "tidak diketahui"))
+                    Text("Versi WebView: " + (provider?.versionName ?: "tidak diketahui"))
+                    Text("Android: " + android.os.Build.VERSION.RELEASE + " (SDK " + android.os.Build.VERSION.SDK_INT + ")")
+                    Text("URL: " + (webView?.url ?: initialUrl))
+                    Text("Renderer berhenti: " + rendererCrashed)
+                    Text("Console error: " + consoleMessage)
+                    Text("Mode desktop: " + desktopMode)
+                } },
+                confirmButton = { TextButton(onClick = { showDiagnostics = false }) { Text("Tutup") } },
+                dismissButton = { TextButton(onClick = {
+                    val report = "Mora Live WebView diagnostic\nProvider: " + provider?.packageName + "\nVersion: " + provider?.versionName + "\nAndroid: " + android.os.Build.VERSION.RELEASE + " SDK " + android.os.Build.VERSION.SDK_INT + "\nURL: " + (webView?.url ?: initialUrl) + "\nRenderer crashed: " + rendererCrashed + "\nConsole: " + consoleMessage
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Mora Live diagnostics", report))
+                }) { Text("Salin laporan") } }
+            )
         }
 
         Row(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
