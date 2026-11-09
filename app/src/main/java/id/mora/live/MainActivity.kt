@@ -676,6 +676,12 @@ private fun PlatformWebView(
                                 }
                             }
                             webChromeClient = object : WebChromeClient() {
+                                override fun onConsoleMessage(message: android.webkit.ConsoleMessage?): Boolean {
+                                    if (message != null && message.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR) {
+                                        consoleMessage = message.message() + " (line " + message.lineNumber() + ", " + message.sourceId() + ")"
+                                    }
+                                    return true
+                                }
                                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
                                     progress = newProgress
                                 }
