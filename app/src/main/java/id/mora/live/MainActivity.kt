@@ -654,42 +654,8 @@ private fun PlatformWebView(
                                 }
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     progress = 100
-                                    // Remove IDN promotional/footer blocks and make the actual HTML5
-                                    // player use the available viewport. Cross-origin iframe internals
-                                    // remain controlled by IDN and cannot be modified by this page.
-                                    val playerCssJs = """
-                                        (function() {
-                                          try {
-                                            document.documentElement.style.background = '#000';
-                                            document.body.style.background = '#000';
-                                            document.querySelectorAll('video').forEach(function(v) {
-                                              v.setAttribute('playsinline','');
-                                              v.setAttribute('webkit-playsinline','');
-                                              v.controls = true;
-                                              v.style.setProperty('display','block','important');
-                                              v.style.setProperty('width','100vw','important');
-                                              v.style.setProperty('height','100vh','important');
-                                              v.style.setProperty('max-width','100vw','important');
-                                              v.style.setProperty('max-height','100vh','important');
-                                              v.style.setProperty('object-fit','contain','important');
-                                              v.style.setProperty('background','#000','important');
-                                            });
-                                            var words = ['Dapatkan informasi ter-update','App Store','Google Play',
-                                              'Tentang Kami','Syarat & Ketentuan','Ketentuan Layanan',
-                                              'Community Guideline','Kontak Kami','Artikel'];
-                                            document.querySelectorAll('footer, [class*=footer], [id*=footer], a, p, h1, h2, h3, section, div').forEach(function(el) {
-                                              var t = (el.innerText || '').trim();
-                                              if (t && t.length < 500 && words.some(function(w){return t.toLowerCase().includes(w.toLowerCase());})) {
-                                                var target = el.closest('footer') || el.closest('[class*=footer]') || el;
-                                                target.style.setProperty('display','none','important');
-                                              }
-                                            });
-                                            var v = document.querySelector('video');
-                                            if (v) { v.scrollIntoView({block:'center', inline:'nearest'}); }
-                                          } catch(e) {}
-                                        })();
-                                    """.trimIndent()
-                                    view?.evaluateJavascript(playerCssJs, null)
+                                    // Keep the official IDN player DOM untouched; it owns video, chat and gifts.
+
                                 }
                                 override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                                     if (request?.isForMainFrame == true) {
@@ -773,6 +739,28 @@ private fun PlatformWebView(
                 Spacer(Modifier.width(6.dp))
                 Text("MORA LIVE • ${platform.name}", color = androidx.compose.ui.graphics.Color.White,
                     style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            }
+        }
+
+
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+            color = androidx.compose.ui.graphics.Color(0xEE20242B),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            TextButton(onClick = {
+                val target = webView?.url?.takeIf { it.startsWith("https://") } ?: initialUrl
+                val chromeIntent = Intent(Intent.ACTION_VIEW, Uri.parse(target)).apply {
+                    setPackage("com.android.chrome")
+                }
+                try {
+                    context.startActivity(chromeIntent)
+                } catch (_: Exception) {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target)))
+                }
+            }) {
+                Text("PUTAR DI CHROME • VIDEO, CHAT & GIFT",
+                    color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold)
             }
         }
 
