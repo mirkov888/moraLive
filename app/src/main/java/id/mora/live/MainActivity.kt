@@ -657,11 +657,10 @@ private fun PlatformWebView(
                                 request: WebResourceRequest?,
                                 errorResponse: android.webkit.WebResourceResponse?
                             ) {
-                                if (request?.isForMainFrame == true &&
-                                    (errorResponse?.statusCode ?: 200) >= 400
-                                ) {
-                                    hasError = true
-                                    progress = 100
+                                // HTTP errors are not transport failures; keep the page visible.
+                                if (request?.isForMainFrame == true) {
+                                    val status = errorResponse?.statusCode ?: 0
+                                    if (status >= 400) errorDetail = "Server HTTP $status; situs mungkin menolak WebView atau URL live sudah tidak tersedia."
                                 }
                             }
                         }
