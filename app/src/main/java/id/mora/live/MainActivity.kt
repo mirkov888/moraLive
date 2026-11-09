@@ -594,6 +594,7 @@ private fun PlatformWebView(
     var errorDetail by remember(initialUrl) { mutableStateOf("Koneksi ke server ditolak.") }
     var showDiagnostics by remember { mutableStateOf(false) }
     var consoleMessage by remember { mutableStateOf("Belum ada pesan console.") }
+    var videoDiagnostics by remember { mutableStateOf("Belum diperiksa") }
     var rendererCrashed by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var desktopMode by remember { mutableStateOf(false) }
@@ -755,7 +756,16 @@ private fun PlatformWebView(
 
         Surface(modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
             color = androidx.compose.ui.graphics.Color(0xCC20242B), shape = RoundedCornerShape(24.dp)) {
-            TextButton(onClick = { showDiagnostics = true }) {
+            TextButton(onClick = {
+                val script = "(function(){var vs=document.getElementsByTagName('video'),a=[];for(var i=0;i<vs.length;i++){var v=vs[i];a.push({src:v.currentSrc||v.src,readyState:v.readyState,networkState:v.networkState,paused:v.paused,width:v.videoWidth,height:v.videoHeight,errorCode:v.error?v.error.code:0,errorMessage:v.error?v.error.message:'',currentTime:v.currentTime});}var fs=document.getElementsByTagName('iframe'),f=[];for(var j=0;j<fs.length;j++){f.push({src:fs[j].src,width:fs[j].clientWidth,height:fs[j].clientHeight});}return JSON.stringify({title:document.title,url:location.href,scrollY:window.scrollY,viewport:innerWidth+'x'+innerHeight,documentSize:document.documentElement.scrollWidth+'x'+document.documentElement.scrollHeight,videoCount:vs.length,videos:a,iframeCount:fs.length,iframes:f,mediaSource:!!window.MediaSource,eme:!!(navigator.requestMediaKeySystemAccess),mp4Support:vs.length?vs[0].canPlayType('video/mp4'):'no video'});})()"
+                webView?.evaluateJavascript(script) { result ->
+                    videoDiagnostics = result ?: "WebView tidak mengembalikan data"
+                    showDiagnostics = true
+                } ?: run {
+                    videoDiagnostics = "WebView belum siap"
+                    showDiagnostics = true
+                }
+            }) {
                 Text("Diagnostik player", color = androidx.compose.ui.graphics.Color.White)
             }
         }
@@ -771,6 +781,7 @@ private fun PlatformWebView(
                     Text("URL: " + (webView?.url ?: initialUrl))
                     Text("Renderer berhenti: " + rendererCrashed)
                     Text("Console error: " + consoleMessage)
+                    Text("Status elemen video: " + videoDiagnostics)
                     Text("Mode desktop: " + desktopMode)
                 } },
                 confirmButton = { TextButton(onClick = { showDiagnostics = false }) { Text("Tutup") } },
