@@ -122,7 +122,7 @@ private fun MoraLiveApp() {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                TopAppBar(
+                if (activePlatform == null) TopAppBar(
                     title = {
                         Column {
                             Text("MORA LIVE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
@@ -148,7 +148,7 @@ private fun MoraLiveApp() {
                 )
             },
             bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                if (activePlatform == null) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                     listOf("Beranda", "Search", "Favorit", "Account").forEach { item ->
                         NavigationBarItem(
                             selected = selected == item,
@@ -561,130 +561,192 @@ private fun PlatformWebView(
     var progress by remember(platform.url) { mutableIntStateOf(0) }
     var hasError by remember(platform.url) { mutableStateOf(false) }
     var errorDetail by remember(platform.url) { mutableStateOf("Koneksi ke server ditolak.") }
+    var selectedPlayerTab by remember { mutableStateOf("Chat") }
     val context = LocalContext.current
 
     BackHandler(enabled = true) {
         val current = webView
-        if (current != null && current.canGoBack()) current.goBack() else onClose()
+        if (fullScreenView != null) {
+            fullScreenView = null
+            fullScreenCallback?.onCustomViewHidden()
+            fullScreenCallback = null
+            current?.visibility = View.VISIBLE
+        } else if (current != null && current.canGoBack()) current.goBack() else onClose()
     }
 
-    Column(modifier) {
+    Column(modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF090B10))) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Kembali") }
             Column(Modifier.weight(1f)) {
-                Text(platform.name, fontWeight = FontWeight.SemiBold)
-                Text("Situs resmi", style = MaterialTheme.typography.labelSmall,
+                Text("MORA LIVE", fontWeight = FontWeight.Black)
+                Text(platform.name, style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            TextButton(onClick = { hasError = false; progress = 0; webView?.reload() }) { Text("Muat ulang") }
-            TextButton(onClick = { val target = webView?.url ?: initialUrl; context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target))) }) { Text("Buka di browser") }
-            TextButton(onClick = onClose) { Text("Tutup") }
-        }
-        if (progress in 1..99) {
-            LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
-        }
-        if (hasError) {
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                EmptyState(
-                    "Koneksi ke ${platform.name} ditolak",
-                    "$errorDetail\n\nCoba ganti jaringan, nonaktifkan VPN/proxy sementara, atau buka lewat browser."
-                )
-                Button(
-                    onClick = { hasError = false; progress = 0 },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Coba lagi") }
-                OutlinedButton(
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(platform.url))
-                        context.startActivity(intent)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Buka di browser") }
+            IconButton(onClick = { hasError = false; progress = 0; webView?.reload() }) {
+                Icon(Icons.Default.LiveTv, contentDescription = "Muat ulang")
             }
         }
-        if (!hasError) key(platform.url) {
-            AndroidView(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                factory = { viewContext ->
-                    WebView(viewContext).apply {
-                        webView = this
-                        // Keep the embedded player on a hardware-accelerated rendering path.
-                        setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        // Some sites reject embedded WebViews identified by the "wv" token.
-                        // Present a standard mobile Chrome UA while retaining WebView rendering.
-                        settings.userAgentString = settings.userAgentString
-                            .replace("; wv", "")
-                            .replace("Version/4.0 ", "")
-                        settings.mediaPlaybackRequiresUserGesture = false
-                        settings.loadsImagesAutomatically = true
-                        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
-                        settings.allowFileAccess = false
-                        settings.allowContentAccess = false
-                        settings.javaScriptCanOpenWindowsAutomatically = false
-                        settings.setSupportMultipleWindows(false)
-                        settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                                hasError = false
-                                progress = 5
-                            }
 
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                progress = 100
-                            }
-
-                            override fun onReceivedError(
-                                view: WebView?,
-                                request: WebResourceRequest?,
-                                error: WebResourceError?
-                            ) {
-                                if (request?.isForMainFrame == true) {
-                                    errorDetail = error?.description?.toString() ?: "net::ERR_CONNECTION_FAILED"
-                                    hasError = true
-                                    progress = 100
+        // Player stage: keep the official platform page in a dedicated viewing area.
+        Box(
+            Modifier.fillMaxWidth().weight(0.58f).background(androidx.compose.ui.graphics.Color.Black)
+        ) {
+            if (!hasError) {
+                key(initialUrl) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { viewContext ->
+                            WebView(viewContext).apply {
+                                webView = this
+                                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.userAgentString = settings.userAgentString
+                                    .replace("; wv", "").replace("Version/4.0 ", "")
+                                settings.mediaPlaybackRequiresUserGesture = false
+                                settings.loadsImagesAutomatically = true
+                                settings.useWideViewPort = true
+                                settings.loadWithOverviewMode = false
+                                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                                settings.allowFileAccess = false
+                                settings.allowContentAccess = false
+                                settings.javaScriptCanOpenWindowsAutomatically = true
+                                settings.setSupportMultipleWindows(false)
+                                settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                        hasError = false
+                                        progress = 5
+                                    }
+                                    override fun onPageFinished(view: WebView?, url: String?) { progress = 100 }
+                                    override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                                        if (request?.isForMainFrame == true) {
+                                            errorDetail = error?.description?.toString() ?: "net::ERR_CONNECTION_FAILED"
+                                            hasError = true
+                                            progress = 100
+                                        }
+                                    }
+                                    override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: android.webkit.WebResourceResponse?) {
+                                        if (request?.isForMainFrame == true) {
+                                            val status = errorResponse?.statusCode ?: 0
+                                            if (status >= 400) errorDetail = "Server HTTP $status. Situs mungkin menolak WebView atau URL live tidak tersedia."
+                                        }
+                                    }
                                 }
-                            }
-
-                            override fun onReceivedHttpError(
-                                view: WebView?,
-                                request: WebResourceRequest?,
-                                errorResponse: android.webkit.WebResourceResponse?
-                            ) {
-                                // HTTP errors are not transport failures; keep the page visible.
-                                if (request?.isForMainFrame == true) {
-                                    val status = errorResponse?.statusCode ?: 0
-                                    if (status >= 400) errorDetail = "Server HTTP $status; situs mungkin menolak WebView atau URL live sudah tidak tersedia."
+                                webChromeClient = object : WebChromeClient() {
+                                    override fun onProgressChanged(view: WebView?, newProgress: Int) { progress = newProgress }
+                                    override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                                        if (view != null) {
+                                            fullScreenView = view
+                                            fullScreenCallback = callback
+                                            this@apply.visibility = View.INVISIBLE
+                                        }
+                                    }
+                                    override fun onHideCustomView() {
+                                        fullScreenView = null
+                                        fullScreenCallback?.onCustomViewHidden()
+                                        fullScreenCallback = null
+                                        this@apply.visibility = View.VISIBLE
+                                    }
                                 }
+                                loadUrl(initialUrl.ifBlank { platform.url })
                             }
+                        },
+                        update = { webView = it },
+                        onRelease = {
+                            if (webView === it) webView = null
+                            it.stopLoading()
+                            it.webChromeClient = null
+                            it.webViewClient = WebViewClient()
+                            it.destroy()
                         }
-                        webChromeClient = object : WebChromeClient() {
-                            override fun onProgressChanged(view: WebView?, newProgress: Int) { progress = newProgress }
-                            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) { if (view != null) { fullScreenView = view; fullScreenCallback = callback; this@apply.visibility = View.INVISIBLE } }
-                            override fun onHideCustomView() { fullScreenView = null; fullScreenCallback?.onCustomViewHidden(); fullScreenCallback = null; this@apply.visibility = View.VISIBLE }
-                        }
-                        loadUrl(initialUrl.ifBlank { platform.url })
-                    }
-                },
-                update = { webView = it },
-                onRelease = {
-                    if (webView === it) webView = null
-                    it.stopLoading()
-                    it.webChromeClient = null
-                    it.webViewClient = WebViewClient()
-                    it.destroy()
+                    )
                 }
-            )
+            } else {
+                Column(Modifier.align(Alignment.Center).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Siaran belum dapat dimuat", color = androidx.compose.ui.graphics.Color.White,
+                        fontWeight = FontWeight.Bold)
+                    Text(errorDetail, color = androidx.compose.ui.graphics.Color.LightGray,
+                        style = MaterialTheme.typography.bodySmall)
+                    Button(onClick = { hasError = false; progress = 0; webView?.reload() }) {
+                        Text("Coba lagi")
+                    }
+                    TextButton(onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webView?.url ?: initialUrl)))
+                    }) { Text("Buka di browser") }
+                }
+            }
+            if (progress in 1..99) {
+                LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+            }
+            Surface(
+                Modifier.align(Alignment.TopStart).padding(12.dp),
+                color = androidx.compose.ui.graphics.Color(0xCC111111),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(7.dp).background(androidx.compose.ui.graphics.Color.Red, RoundedCornerShape(50)))
+                    Spacer(Modifier.width(6.dp))
+                    Text("LIVE • ${platform.name}", color = androidx.compose.ui.graphics.Color.White,
+                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
+            }
+            fullScreenView?.let { videoView ->
+                Dialog(onDismissRequest = {
+                    fullScreenView = null
+                    fullScreenCallback?.onCustomViewHidden()
+                    fullScreenCallback = null
+                    webView?.visibility = View.VISIBLE
+                }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                    AndroidView(modifier = Modifier.fillMaxSize(), factory = { viewContext ->
+                        FrameLayout(viewContext).apply {
+                            setBackgroundColor(android.graphics.Color.BLACK)
+                            addView(videoView, FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                            ))
+                        }
+                    })
+                }
+            }
         }
-        fullScreenView?.let { videoView ->
-            Dialog(onDismissRequest = { fullScreenView = null; fullScreenCallback?.onCustomViewHidden(); fullScreenCallback = null; webView?.visibility = View.VISIBLE }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-                AndroidView(modifier = Modifier.fillMaxSize(), factory = { viewContext -> FrameLayout(viewContext).apply { setBackgroundColor(android.graphics.Color.BLACK); addView(videoView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)) } })
+
+        Column(Modifier.fillMaxWidth().weight(0.42f).padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text(initialUrl.substringAfterLast('/').ifBlank { platform.name },
+                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                maxLines = 1)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(platform.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(10.dp))
+                Text("Siaran resmi", color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.labelSmall)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webView?.url ?: initialUrl)))
+                }) { Text("Browser") }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf("Profile", "Chat", "Top Gifter", "Rekomendasi").forEach { tab ->
+                    TextButton(onClick = { selectedPlayerTab = tab }) {
+                        Text(tab, color = if (selectedPlayerTab == tab) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (selectedPlayerTab == tab) FontWeight.Bold else FontWeight.Normal)
+                    }
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            when (selectedPlayerTab) {
+                "Profile" -> Text("Profil streamer ditampilkan dari informasi resmi yang tersedia pada halaman platform.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+                "Top Gifter" -> Text("Data Top Gifter mengikuti halaman resmi platform. Mora Live belum mengambil data gift secara terpisah.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+                "Rekomendasi" -> Text("Rekomendasi streamer akan tersedia setelah direktori resmi terintegrasi.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+                else -> Text("Chat tersedia melalui halaman resmi di area player. Fitur chat native memerlukan API resmi platform.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
             }
         }
     }
